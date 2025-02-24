@@ -3,16 +3,16 @@ import torch
 
 class Config:
 
-    project_dir = r"C:\\Users\\DELL\\Desktop\\FaceRec"
+    project_dir = r"C:\\Users\\DELL\\Documents\\FaceRec"
     
-    data_dir = None#os.path.join(project_dir,"Dataset")
+    data_dir = os.path.join(project_dir,"Dataset")
 
     image_size = 512    
-    batch_size = 2
+    batch_size = 1
     num_epochs = 50
     learning_rate = 0.0002
     latent_dim = 512
-    num_workers = 4
+    num_workers = 0
     checkpoint_path =os.path.join(project_dir,"checkpoints")
     SaveInterval = 2
     image_path = os.path.join(project_dir,"TestFolder/test1.jpg")
