@@ -50,6 +50,7 @@ class AutoEncoder1(nn.Module):
         latent = self.encoder(x)  #
         reconstructed = self.decoder(latent)
         return reconstructed, latent
+
 #__________________________________________________________________________________________________________________________
 class BasicResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, downsample=True):
@@ -209,3 +210,4 @@ class AutoEncoder(nn.Module):
         latent = self.encoder(x)
         reconstruction = self.decoder(latent)
         return reconstruction, latent
+

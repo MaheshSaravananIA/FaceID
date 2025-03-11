@@ -36,6 +36,7 @@ def evaluate(model, dataloader, criterion, device,plot=False,n=2,print_flag = Fa
     running_loss = 0.0
     
     process_tensor = lambda x: x.detach().cpu().numpy().squeeze().transpose(0,2,3,1)
+    plot_scale = lambda x: (x + 1) / 2
 
 
     with torch.no_grad():
@@ -63,16 +64,24 @@ def evaluate(model, dataloader, criterion, device,plot=False,n=2,print_flag = Fa
 
         batch = batch[torch.randint(0, batch.shape[0], (n,))]
         recon,_ = model(batch.to(device))
-
+        
+        
+        
         before= process_tensor(batch)
         after = process_tensor(recon)
+        
+        before= plot_scale(before)
+        after = plot_scale(after)
+        
 
         _, axes = plt.subplots(nrows=n, ncols=2, figsize=(10, 25))  
         for i in range(n):
             axes[i, 0].imshow(before[i]);axes[i, 0].axis("off"),axes[i, 0]
             axes[i, 1].imshow(after[i]);axes[i, 1].axis("off");axes[i, 1]
         plt.tight_layout()
-        plt.show()
+        save_path = os.path.join(config.project_dir,"log", "test_result.png")
+        plt.savefig(save_path, bbox_inches="tight", dpi=300)
+        plt.close()
     return epoch_loss
 
 
@@ -84,7 +93,7 @@ def plot_loss(loss_bin, epoch, log_folder="log"):
     plt.xlabel("Steps")
     plt.ylabel("MSE")
     plt.title(f"Epoch {epoch}")
-    save_path = os.path.join(config.root_dir,log_folder, f"loss_epoch.png")
+    save_path = os.path.join(config.project_dir,log_folder, f"loss_epoch.png")
     plt.savefig(save_path)
     plt.close()
 

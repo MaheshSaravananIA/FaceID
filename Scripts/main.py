@@ -20,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description="AutoEncoder Training and Evaluation")
     parser.add_argument("--train", action="store_true", help="Train the model")
     parser.add_argument("--test", action="store_true", help="Evaluate on test set")
-    parser.add_argument("--self", action="store_true", help="Run self-evaluation")
+    parser.add_argument("--self_test", action="store_true", help="Run self-evaluation")
     args = parser.parse_args()
 
     config = Config()
@@ -34,7 +34,8 @@ def main():
         config.data_dir,
         config.image_size,
         config.batch_size,
-        config.num_workers
+        config.num_workers,
+        split_ratios = config.split_ratios
     )
 
     model = AutoEncoder(config.latent_dim, config.image_size).to(device)
@@ -48,7 +49,7 @@ def main():
 
     if args.test:  run_evaluation(model, test_loader, criterion, device)
 
-    if args.self: self_eval(model)
+    if args.self_test: self_eval(model)
 
 if __name__ == "__main__":
     main()

@@ -23,6 +23,7 @@ def run_evaluation(model, test_loader, criterion, device):
     print(f"Test Loss: {test_loss:.4f}")
 
 def self_eval(model):
+    plot_scale = lambda x: (x + 1) / 2
     model = load_model(model)
     transform = transforms.Compose([
         transforms.Resize((config.image_size, config.image_size)),
@@ -32,7 +33,9 @@ def self_eval(model):
     image = Image.open(config.image_path).convert("RGB")  
     image_tensor = transform(image).unsqueeze(0).to(config.device)
     recon = model(image_tensor)[0].squeeze().detach().cpu().numpy().transpose(1, 2, 0)
-
+    
+    
+    recon = plot_scale(recon)
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].imshow(np.array(image));axes[0].set_title("Before (Original)");axes[0].axis("off")
     axes[1].imshow(recon);axes[1].set_title("After (Reconstructed)");axes[1].axis("off")
