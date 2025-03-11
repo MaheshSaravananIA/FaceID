@@ -25,4 +25,5 @@ class Config:
     device ="cuda" if torch.cuda.is_available() else "cpu"
 
     denorm = lambda x: (x + 1) / 2
-    
+
+

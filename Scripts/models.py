@@ -50,7 +50,7 @@ class AutoEncoder1(nn.Module):
         latent = self.encoder(x)  #
         reconstructed = self.decoder(latent)
         return reconstructed, latent
-
+#__________________________________________________________________________________________________________________________
 class BasicResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, downsample=True):
         super(BasicResBlock, self).__init__()
@@ -104,7 +104,6 @@ class UpBasicResBlock(nn.Module):
                                padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
         
-        # For the skip connection: if upsampling or channel change is needed
         if upsample or in_channels != out_channels:
             if upsample:
                 self.skip = nn.Sequential(
@@ -133,12 +132,10 @@ class UpBasicResBlock(nn.Module):
         out = self.relu(out)
         return out
 
-
-class AutoEncoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(self, image_size, latent_dim):
+        super(Encoder, self).__init__()
         self.image_size = image_size
-        super(AutoEncoder, self).__init__()
-        
         self.initial = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
             nn.BatchNorm2d(64),
@@ -151,24 +148,13 @@ class AutoEncoder(nn.Module):
         self.encoder_block4 = BasicResBlock(512, 512, downsample=True)
         self.encoder_block5 = BasicResBlock(512, 512, downsample=True)
         
-        
-        final_spatial = image_size // 64  # since 2^6 = 64
+        # Calculate the spatial dimensions after downsampling
+        final_spatial = image_size // 64  # since each downsample reduces spatial size
         self.flatten_dim = 512 * final_spatial * final_spatial
         
         self.fc_enc = nn.Linear(self.flatten_dim, latent_dim)
-        
-    
-        self.fc_dec = nn.Linear(latent_dim, self.flatten_dim)
-        self.decoder_block1 = UpBasicResBlock(512, 512, upsample=True)
-        self.decoder_block2 = UpBasicResBlock(512, 512, upsample=True)
-        self.decoder_block3 = UpBasicResBlock(512, 256, upsample=True)
-        self.decoder_block4 = UpBasicResBlock(256, 128, upsample=True)
-        self.decoder_block5 = UpBasicResBlock(128, 64, upsample=True)
-        self.final_up = nn.ConvTranspose2d(64, 3, kernel_size=2, stride=2, bias=False)
-        self.tanh = nn.Tanh()
     
     def forward(self, x):
-        
         x = self.initial(x)
         x = self.encoder_block1(x)
         x = self.encoder_block2(x)
@@ -177,18 +163,49 @@ class AutoEncoder(nn.Module):
         x = self.encoder_block5(x)
         x = x.view(x.size(0), -1)
         latent = self.fc_enc(x)
+        return latent
+
+class Decoder(nn.Module):
+    def __init__(self, image_size, latent_dim):
+        super(Decoder, self).__init__()
+        self.image_size = image_size
         
-        # Decoder
+        # Calculate spatial size corresponding to encoder output
+        final_spatial = image_size // 64
+        flatten_dim = 512 * final_spatial * final_spatial
+        
+        self.fc_dec = nn.Linear(latent_dim, flatten_dim)
+        
+        self.decoder_block1 = UpBasicResBlock(512, 512, upsample=True)
+        self.decoder_block2 = UpBasicResBlock(512, 512, upsample=True)
+        self.decoder_block3 = UpBasicResBlock(512, 256, upsample=True)
+        self.decoder_block4 = UpBasicResBlock(256, 128, upsample=True)
+        self.decoder_block5 = UpBasicResBlock(128, 64, upsample=True)
+        self.final_up = nn.ConvTranspose2d(64, 3, kernel_size=2, stride=2, bias=False)
+        self.tanh = nn.Tanh()
+    
+    def forward(self, latent):
+        # Project the latent vector back to feature space
+        final_spatial = self.image_size // 64
         x = self.fc_dec(latent)
-       
-        #x = x.view(x.size(0), 512, int(x.size(1) // 512**0.5), int(x.size(1) // 512**0.5))
-        x = x.view(x.size(0), 512, self.image_size // 64, self.image_size // 64)
+        x = x.view(x.size(0), 512, final_spatial, final_spatial)
         x = self.decoder_block1(x)
         x = self.decoder_block2(x)
         x = self.decoder_block3(x)
         x = self.decoder_block4(x)
         x = self.decoder_block5(x)
         x = self.final_up(x)
-        out = self.tanh(x)
-        return out,latent
+        reconstruction = self.tanh(x)
+        return reconstruction
 
+
+class AutoEncoder(nn.Module):
+    def __init__(self, image_size, latent_dim):
+        super(AutoEncoder, self).__init__()
+        self.encoder = Encoder(image_size, latent_dim)
+        self.decoder = Decoder(image_size, latent_dim)
+    
+    def forward(self, x):
+        latent = self.encoder(x)
+        reconstruction = self.decoder(latent)
+        return reconstruction, latent
